@@ -156,12 +156,12 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 mb-1">Вадік (Загальний)</label>
-                                        <input type="number" inputmode="decimal" value="${rec.meterVadik || ''}" oninput="updateField('${rec.id}', 'meterVadik', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-semibold h-12 text-center">
+                                        <input type="number" inputmode="decimal" value="${rec.meterVadik || ''}" onchange="updateField('${rec.id}', 'meterVadik', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-semibold h-12 text-center">
                                         <div class="text-xs text-gray-400 mt-1 text-center">Споживання: ${rec.cVadik}</div>
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-500 mb-1">МИ</label>
-                                        <input type="number" inputmode="decimal" value="${rec.meterMI || ''}" oninput="updateField('${rec.id}', 'meterMI', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-semibold h-12 text-center">
+                                        <input type="number" inputmode="decimal" value="${rec.meterMI || ''}" onchange="updateField('${rec.id}', 'meterMI', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-semibold h-12 text-center">
                                         <div class="text-xs text-gray-400 mt-1 text-center">Споживання: ${rec.cMI}</div>
                                     </div>
                                 </div>
@@ -170,19 +170,19 @@
                             <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Вода (грн)</label>
-                                    <input type="number" inputmode="decimal" value="${rec.water || ''}" oninput="updateField('${rec.id}', 'water', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
+                                    <input type="number" inputmode="decimal" value="${rec.water || ''}" onchange="updateField('${rec.id}', 'water', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Газ (грн)</label>
-                                    <input type="number" inputmode="decimal" value="${rec.gas || ''}" oninput="updateField('${rec.id}', 'gas', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
+                                    <input type="number" inputmode="decimal" value="${rec.gas || ''}" onchange="updateField('${rec.id}', 'gas', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Оплачено (грн)</label>
-                                    <input type="number" inputmode="decimal" value="${rec.paid || ''}" oninput="updateField('${rec.id}', 'paid', this.value)" class="w-full bg-green-50 border border-green-200 rounded-lg p-2 text-lg text-green-700 font-bold h-12">
+                                    <input type="number" inputmode="decimal" value="${rec.paid || ''}" onchange="updateField('${rec.id}', 'paid', this.value)" class="w-full bg-green-50 border border-green-200 rounded-lg p-2 text-lg text-green-700 font-bold h-12">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Тариф Світло</label>
-                                    <input type="number" inputmode="decimal" step="0.01" value="${rec.rate || ''}" oninput="updateField('${rec.id}', 'rate', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
+                                    <input type="number" inputmode="decimal" step="0.01" value="${rec.rate || ''}" onchange="updateField('${rec.id}', 'rate', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
                                 </div>
                             </div>
 
