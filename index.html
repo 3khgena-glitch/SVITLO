@@ -4,12 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Комуналка</title>
-    <!-- Підключаємо Tailwind CSS для дизайну -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
-        input[type="number"] { font-size: 16px; /* Запобігає зуму на iPhone */ }
-        .hidden { display: none; }
+        
+        /* Прибираємо дратівливі стрілочки в полях вводу на всіх браузерах */
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            font-size: 16px; /* Запобігає зуму на iPhone */
+        }
     </style>
 </head>
 <body class="pb-24 md:max-w-md md:mx-auto shadow-xl min-h-screen">
@@ -32,19 +40,33 @@
         </button>
     </div>
 
+    <!-- Кнопка скидання даних -->
+    <div class="fixed top-6 right-4 z-20">
+        <button onclick="resetData()" class="text-white opacity-50 hover:opacity-100 text-xs bg-blue-800 px-2 py-1 rounded">Скинути історію</button>
+    </div>
+
     <script>
-        // Початкові дані (з Екселю для старту)
-        let records = JSON.parse(localStorage.getItem('utility_records')) || [
-            { id: '2024-07', name: 'Липень 2024', water: 620, gas: 50.17, paid: 0, meterVadik: 61648, meterMI: 5385, rate: 4.32 },
+        // Початкові дані з правильним стартовим розрахунком
+        const defaultRecords = [
+            { id: '2024-07', name: 'Липень 2024 (Старт)', water: 0, gas: 0, paid: 0, meterVadik: 61648, meterMI: 5385, rate: 4.32 },
             { id: '2024-08', name: 'Серпень 2024', water: 907, gas: 50.17, paid: 2550, meterVadik: 61870, meterMI: 5497, rate: 4.32 }
         ];
 
+        let records = JSON.parse(localStorage.getItem('utility_records_v2')) || defaultRecords;
+
         let expandedId = null;
-        let startBalance = 2082.96; // Баланс на кінець липня
+        let startBalance = 2082.96; // Баланс ПЕРЕД серпнем
 
         function saveAndRender() {
-            localStorage.setItem('utility_records', JSON.stringify(records));
+            localStorage.setItem('utility_records_v2', JSON.stringify(records));
             render();
+        }
+
+        function resetData() {
+            if(confirm('Увага! Це видалить всі введені дані і поверне історію до Серпня 2024. Продовжити?')) {
+                records = JSON.parse(JSON.stringify(defaultRecords));
+                saveAndRender();
+            }
         }
 
         function toggleExpand(id) {
@@ -53,6 +75,8 @@
         }
 
         function updateField(id, field, value) {
+            // Дозволяємо вводити крапку або кому
+            value = value.replace(',', '.');
             const numVal = value === '' ? 0 : parseFloat(value);
             const record = records.find(r => r.id === id);
             if (record) {
@@ -71,7 +95,7 @@
         function addMonth() {
             const lastRecord = records[records.length - 1];
             const now = new Date();
-            const newId = now.getTime().toString(); // Унікальний ID
+            const newId = now.getTime().toString();
             
             records.push({
                 id: newId,
@@ -83,7 +107,7 @@
                 meterMI: lastRecord ? lastRecord.meterMI : 0,
                 rate: 4.32
             });
-            expandedId = newId; // Відразу відкриваємо новий місяць
+            expandedId = newId; 
             saveAndRender();
         }
 
@@ -94,7 +118,6 @@
             let currentBalance = startBalance;
             let currentTotal = 0;
 
-            // Розрахунок
             const calculated = records.map((rec, index) => {
                 const prevRec = index > 0 ? records[index - 1] : null;
                 let cMI = 0, cVadik = 0;
@@ -111,12 +134,10 @@
                 currentTotal = currentBalance;
 
                 return { ...rec, cMI, cVadik, lightCost, prevBalance, monthBalance: currentBalance };
-            }).reverse(); // Нові зверху
+            }).reverse(); 
 
-            // Оновлення шапки
             document.getElementById('total-balance').innerText = currentTotal.toFixed(2) + ' ₴';
 
-            // Малювання карток
             calculated.forEach(rec => {
                 const isExpanded = expandedId === rec.id;
                 const balColor = rec.monthBalance >= 0 ? 'text-green-600' : 'text-red-500';
@@ -125,68 +146,64 @@
                 if (isExpanded) {
                     detailsHtml = `
                         <div class="p-4 pt-0 border-t border-gray-50">
-                            <!-- Назва -->
                             <div class="mb-4">
                                 <label class="block text-xs text-gray-500 mb-1">Назва місяця</label>
-                                <input type="text" value="${rec.name}" onchange="records.find(r=>r.id=='${rec.id}').name=this.value; saveAndRender()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-medium">
+                                <input type="text" value="${rec.name}" onchange="records.find(r=>r.id=='${rec.id}').name=this.value; saveAndRender()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-medium h-12">
                             </div>
 
-                            <!-- Лічильники -->
                             <div class="bg-gray-50 p-3 rounded-xl mb-4">
                                 <h3 class="text-sm font-semibold text-gray-500 mb-2 uppercase">Лічильники</h3>
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-gray-500 mb-1">Вадік (Загальний)</label>
-                                        <input type="number" value="${rec.meterVadik || ''}" oninput="updateField('${rec.id}', 'meterVadik', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-lg">
-                                        <div class="text-xs text-gray-400 mt-1">Споживання: ${rec.cVadik}</div>
+                                        <input type="number" inputmode="decimal" value="${rec.meterVadik || ''}" oninput="updateField('${rec.id}', 'meterVadik', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-semibold h-12 text-center">
+                                        <div class="text-xs text-gray-400 mt-1 text-center">Споживання: ${rec.cVadik}</div>
                                     </div>
                                     <div>
                                         <label class="block text-xs text-gray-500 mb-1">МИ</label>
-                                        <input type="number" value="${rec.meterMI || ''}" oninput="updateField('${rec.id}', 'meterMI', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-lg">
-                                        <div class="text-xs text-gray-400 mt-1">Споживання: ${rec.cMI}</div>
+                                        <input type="number" inputmode="decimal" value="${rec.meterMI || ''}" oninput="updateField('${rec.id}', 'meterMI', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-semibold h-12 text-center">
+                                        <div class="text-xs text-gray-400 mt-1 text-center">Споживання: ${rec.cMI}</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Фінанси -->
                             <div class="grid grid-cols-2 gap-4 mb-4">
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Вода (грн)</label>
-                                    <input type="number" value="${rec.water || ''}" oninput="updateField('${rec.id}', 'water', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg">
+                                    <input type="number" inputmode="decimal" value="${rec.water || ''}" oninput="updateField('${rec.id}', 'water', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Газ (грн)</label>
-                                    <input type="number" value="${rec.gas || ''}" oninput="updateField('${rec.id}', 'gas', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg">
+                                    <input type="number" inputmode="decimal" value="${rec.gas || ''}" oninput="updateField('${rec.id}', 'gas', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Оплачено (грн)</label>
-                                    <input type="number" value="${rec.paid || ''}" oninput="updateField('${rec.id}', 'paid', this.value)" class="w-full bg-green-50 border border-green-200 rounded-lg p-2 text-lg text-green-700 font-semibold">
+                                    <input type="number" inputmode="decimal" value="${rec.paid || ''}" oninput="updateField('${rec.id}', 'paid', this.value)" class="w-full bg-green-50 border border-green-200 rounded-lg p-2 text-lg text-green-700 font-bold h-12">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-gray-500 mb-1">Тариф Світло</label>
-                                    <input type="number" step="0.01" value="${rec.rate || ''}" oninput="updateField('${rec.id}', 'rate', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg">
+                                    <input type="number" inputmode="decimal" step="0.01" value="${rec.rate || ''}" oninput="updateField('${rec.id}', 'rate', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12">
                                 </div>
                             </div>
 
-                            <!-- Підсумок -->
-                            <div class="bg-blue-50 text-blue-900 p-3 rounded-xl text-sm space-y-1 mb-4">
-                                <div class="flex justify-between"><span>Залишок з минулого:</span><span>${rec.prevBalance.toFixed(2)} ₴</span></div>
-                                <div class="flex justify-between font-medium"><span>Світло Вадік:</span><span class="text-red-600">${rec.lightCost.toFixed(2)} ₴</span></div>
+                            <div class="bg-blue-50 text-blue-900 p-3 rounded-xl text-sm space-y-2 mb-4">
+                                <div class="flex justify-between"><span>Залишок з минулого:</span><span class="font-medium">${rec.prevBalance.toFixed(2)} ₴</span></div>
+                                <div class="flex justify-between"><span>Світло Вадік:</span><span class="text-red-600 font-bold">${rec.lightCost.toFixed(2)} ₴</span></div>
                             </div>
 
-                            <button onclick="deleteRecord('${rec.id}')" class="w-full py-3 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition-colors text-sm font-medium">Видалити місяць</button>
+                            <button onclick="deleteRecord('${rec.id}')" class="w-full py-4 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors text-sm font-bold uppercase tracking-wide">Видалити місяць</button>
                         </div>
                     `;
                 }
 
                 const cardHtml = `
                     <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
-                        <div class="p-4 flex justify-between items-center cursor-pointer" onclick="toggleExpand('${rec.id}')">
+                        <div class="p-5 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="toggleExpand('${rec.id}')">
                             <div>
-                                <h2 class="font-semibold text-lg">${rec.name}</h2>
-                                <p class="text-sm ${balColor}">Баланс: ${rec.monthBalance.toFixed(2)} ₴</p>
+                                <h2 class="font-bold text-lg text-gray-800">${rec.name}</h2>
+                                <p class="text-sm font-medium mt-1 ${balColor}">Баланс: ${rec.monthBalance.toFixed(2)} ₴</p>
                             </div>
-                            <div class="text-gray-400 text-xl font-bold">${isExpanded ? '−' : '+'}</div>
+                            <div class="text-gray-400 text-2xl font-bold bg-gray-50 w-10 h-10 flex items-center justify-center rounded-full">${isExpanded ? '−' : '+'}</div>
                         </div>
                         ${detailsHtml}
                     </div>
@@ -195,7 +212,6 @@
             });
         }
 
-        // Перший запуск
         render();
     </script>
 </body>
