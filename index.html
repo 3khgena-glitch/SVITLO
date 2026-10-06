@@ -1,320 +1,402 @@
-<style>
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-    input[type="number"] {
-        -moz-appearance: textfield;
-        font-size: 16px;
-    }
-    
-    .slide-up {
-        animation: slideUp 0.3s ease-out forwards;
-    }
-    @keyframes slideUp {
-        from { transform: translateY(100%); }
-        to { transform: translateY(0); }
-    }
-</style>
-
-<!-- ГОЛОВНИЙ ЕКРАН -->
-<div id="main-screen">
-    <!-- Оновлена шапка -->
-    <div class="bg-blue-600 text-white p-6 pt-12 rounded-b-3xl shadow-lg sticky top-0 z-10 relative">
-        <button onclick="toggleSettings()" class="absolute top-8 right-6 text-2xl opacity-80 hover:opacity-100 transition-opacity">⚙️</button>
-        <h1 class="text-xl font-medium opacity-90 mb-1">Поточний залишок</h1>
-        <div class="text-4xl font-bold" id="total-balance">0.00 ₴</div>
-    </div>
-
-    <div id="records-container" class="p-4 space-y-4"></div>
-</div>
-
-<!-- ЕКРАН ОПЛАТИ -->
-<div id="payment-screen" class="hidden fixed inset-0 bg-gray-100 z-50 flex-col md:max-w-md md:mx-auto shadow-xl">
-    <div class="bg-blue-800 text-white p-4 pt-12 flex items-center shadow-md">
-        <button onclick="togglePaymentScreen()" class="mr-4 text-3xl font-bold px-2 py-1 bg-blue-700 rounded-lg active:bg-blue-900 transition-colors">
-            ←
-        </button>
-        <h1 class="text-xl font-bold uppercase tracking-wide">Оплата</h1>
-    </div>
-    
-    <div class="p-6 flex flex-col gap-4 flex-1 overflow-y-auto pb-24">
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Комуналка</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         
-        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-            <p class="text-gray-500 text-center mb-4 text-sm font-bold uppercase tracking-wide">Крок 1. Перейдіть у банк</p>
-            
-            <a href="https://next.privat24.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#82B81F] text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform mb-3">
-                Приват24
-            </a>
-            
-            <a href="https://www.monobank.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-black text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform mb-3">
-                Monobank
-            </a>
-            
-            <a href="https://online.oschadbank.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#00A451] text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform mb-3">
-                Ощадбанк
-            </a>
-            
-            <a href="https://pay.easypay.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#2094D6] text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform">
-                EasyPay (Без карти)
-            </a>
-        </div>
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+            font-size: 16px;
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out forwards;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="pb-24 md:max-w-md md:mx-auto shadow-xl min-h-screen relative overflow-x-hidden">
 
-        <div class="bg-blue-50 p-5 rounded-2xl shadow-sm border border-blue-100 mt-auto">
-            <p class="text-blue-800 text-center mb-3 text-sm font-bold uppercase tracking-wide">Крок 2. Збережіть оплату</p>
-            <div class="flex gap-2">
-                <input type="number" id="payment-amount" inputmode="decimal" placeholder="Сума..." class="w-full bg-white border border-blue-200 rounded-xl p-3 text-xl font-bold text-center text-blue-900 shadow-inner focus:ring-2 focus:ring-blue-500 outline-none">
-                <button onclick="savePayment()" class="bg-blue-600 text-white rounded-xl px-5 font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-transform">
-                    ОК
-                </button>
-            </div>
-            <p class="text-xs text-blue-600/80 text-center mt-3 font-medium">Введена сума автоматично запишеться в поле «Оплачено» для останнього місяця.</p>
-        </div>
-    </div>
-</div>
-
-<!-- ЕКРАН НАЛАШТУВАНЬ (Новий блок) -->
-<div id="settings-screen" class="hidden fixed inset-0 bg-black/40 z-50 flex-col justify-end md:items-center md:justify-center">
-    <div class="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl p-6 pb-10 shadow-2xl slide-up">
-        <div class="flex justify-between items-center mb-6">
-            <h2 class="text-xl font-bold text-gray-800">Налаштування</h2>
-            <button onclick="toggleSettings()" class="text-gray-500 text-3xl px-2 leading-none active:scale-95">&times;</button>
-        </div>
-        <div class="flex flex-col gap-3">
-            <button onclick="exportCSV(); toggleSettings()" class="w-full text-gray-700 bg-gray-100 hover:bg-gray-200 py-4 rounded-xl font-medium border border-gray-200 active:scale-95 transition-transform">📊 Експорт в Excel (CSV)</button>
-            <button onclick="exportData(); toggleSettings()" class="w-full text-gray-700 bg-gray-100 hover:bg-gray-200 py-4 rounded-xl font-medium border border-gray-200 active:scale-95 transition-transform">📤 Беккап (JSON)</button>
-            <label class="w-full text-center text-gray-700 bg-gray-100 hover:bg-gray-200 py-4 rounded-xl font-medium border border-gray-200 cursor-pointer active:scale-95 transition-transform">
-                📥 Відновити з беккапу
-                <input type="file" accept=".json" class="hidden" onchange="importData(event); toggleSettings()">
+    <!-- ГОЛОВНИЙ ЕКРАН -->
+    <div id="main-screen">
+        <div class="absolute top-4 right-4 z-20 flex flex-col gap-2 items-end">
+            <button onclick="exportCSV()" class="text-white opacity-80 hover:opacity-100 text-xs bg-green-600 px-3 py-1.5 rounded shadow">
+                📊 В Excel (CSV)
+            </button>
+            <button onclick="exportData()" class="text-white opacity-80 hover:opacity-100 text-xs bg-blue-800 px-3 py-1.5 rounded shadow">
+                📤 Беккап (JSON)
+            </button>
+            <label class="text-white opacity-80 hover:opacity-100 text-xs bg-gray-700 px-3 py-1.5 rounded shadow cursor-pointer">
+                📥 Відновити
+                <input type="file" accept=".json" class="hidden" onchange="importData(event)">
             </label>
-            <button onclick="resetData(); toggleSettings()" class="w-full text-red-600 bg-red-50 hover:bg-red-100 py-4 rounded-xl font-bold border border-red-100 mt-4 shadow-sm active:scale-95 transition-transform">🗑 Скинути всі дані</button>
+            <button onclick="resetData()" class="text-white opacity-80 hover:opacity-100 text-xs bg-red-800 px-3 py-1.5 rounded shadow mt-2">
+                🗑 Скинути
+            </button>
+        </div>
+
+        <div class="bg-blue-600 text-white p-6 pt-12 rounded-b-3xl shadow-lg sticky top-0 z-10">
+            <h1 class="text-xl font-medium opacity-90 mb-1">Поточний залишок</h1>
+            <div class="text-4xl font-bold" id="total-balance">0.00 ₴</div>
+        </div>
+
+        <div id="records-container" class="p-4 space-y-4"></div>
+    </div>
+
+    <!-- ЕКРАН ОПЛАТИ -->
+    <div id="payment-screen" class="hidden fixed inset-0 bg-gray-100 z-50 flex-col md:max-w-md md:mx-auto shadow-xl">
+        <div class="bg-blue-800 text-white p-4 pt-12 flex items-center shadow-md">
+            <button onclick="togglePaymentScreen()" class="mr-4 text-3xl font-bold px-2 py-1 bg-blue-700 rounded-lg active:bg-blue-900 transition-colors">
+                ←
+            </button>
+            <h1 class="text-xl font-bold uppercase tracking-wide">Оплата</h1>
+        </div>
+        
+        <div class="p-6 flex flex-col gap-4 flex-1 overflow-y-auto pb-24">
+            
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <p class="text-gray-500 text-center mb-4 text-sm font-bold uppercase tracking-wide">Крок 1. Перейдіть у банк</p>
+                
+                <a href="https://next.privat24.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#82B81F] text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform mb-3">
+                    Приват24
+                </a>
+                
+                <a href="https://www.monobank.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-black text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform mb-3">
+                    Monobank
+                </a>
+                
+                <a href="https://online.oschadbank.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#00A451] text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform mb-3">
+                    Ощадбанк
+                </a>
+                
+                <a href="https://pay.easypay.ua/" target="_blank" class="flex items-center justify-center gap-3 w-full bg-[#2094D6] text-white rounded-xl p-4 font-bold text-lg shadow-md active:scale-95 transition-transform">
+                    EasyPay (Без карти)
+                </a>
+            </div>
+
+            <div class="bg-blue-50 p-5 rounded-2xl shadow-sm border border-blue-100 mt-auto">
+                <p class="text-blue-800 text-center mb-3 text-sm font-bold uppercase tracking-wide">Крок 2. Збережіть оплату</p>
+                <div class="flex gap-2">
+                    <input type="number" id="payment-amount" inputmode="decimal" placeholder="Сума..." class="w-full bg-white border border-blue-200 rounded-xl p-3 text-xl font-bold text-center text-blue-900 shadow-inner focus:ring-2 focus:ring-blue-500 outline-none">
+                    <button onclick="savePayment()" class="bg-blue-600 text-white rounded-xl px-5 font-bold shadow-md hover:bg-blue-700 active:scale-95 transition-transform">
+                        ОК
+                    </button>
+                </div>
+                <p class="text-xs text-blue-600/80 text-center mt-3 font-medium">Введена сума автоматично запишеться в поле «Оплачено» для останнього місяця.</p>
+            </div>
         </div>
     </div>
-</div>
 
-<!-- НИЖНЯ ПАНЕЛЬ -->
-<div class="fixed bottom-6 left-0 right-0 flex justify-center gap-3 pointer-events-none md:max-w-md md:mx-auto z-20 px-4">
-    <button onclick="togglePaymentScreen()" class="pointer-events-auto bg-gray-800 text-white rounded-full p-4 shadow-xl hover:bg-gray-900 active:scale-95 transition-all flex items-center justify-center gap-2 font-bold w-1/3">
-        💳 Оплата
-    </button>
-    <button onclick="addMonth()" class="pointer-events-auto bg-blue-600 text-white rounded-full p-4 shadow-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 font-bold flex-1 text-lg">
-        + Новий місяць
-    </button>
-</div>
+    <!-- НИЖНЯ ПАНЕЛЬ -->
+    <div class="fixed bottom-6 left-0 right-0 flex justify-center gap-3 pointer-events-none md:max-w-md md:mx-auto z-20 px-4">
+        <button onclick="togglePaymentScreen()" class="pointer-events-auto bg-gray-800 text-white rounded-full p-4 shadow-xl hover:bg-gray-900 active:scale-95 transition-all flex items-center justify-center gap-2 font-bold w-1/3">
+            💳 Оплата
+        </button>
+        <button onclick="addMonth()" class="pointer-events-auto bg-blue-600 text-white rounded-full p-4 shadow-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2 font-bold flex-1 text-lg">
+            + Новий місяць
+        </button>
+    </div>
 
-<script>
-    const defaultRecords = [
-        { id: '2024-07', name: 'Липень 2024 (Старт)', water: 0, gas: 0, paid: 0, meterVadik: 61648, meterMI: 5385, rate: 4.32 },
-        { id: '2024-08', name: 'Серпень 2024', water: 907, gas: 50.17, paid: 2550, meterVadik: 61870, meterMI: 5497, rate: 4.32 }
-    ];
+    <script>
+        const defaultRecords = [
+            { id: '2024-07', name: 'Липень 2024 (Старт)', water: 0, gas: 0, paid: 0, meterVadik: 61648, meterMI: 5385, rate: 4.32 },
+            { id: '2024-08', name: 'Серпень 2024', water: 907, gas: 50.17, paid: 2550, meterVadik: 61870, meterMI: 5497, rate: 4.32 }
+        ];
 
-    let records = JSON.parse(localStorage.getItem('utility_records_v2')) || defaultRecords;
-    let expandedId = null;
-    let startBalance = 2082.96;
+        let records = JSON.parse(localStorage.getItem('utility_records_v2')) || defaultRecords;
+        let expandedId = null;
+        let startBalance = 2082.96;
 
-    function saveAndRender() {
-        localStorage.setItem('utility_records_v2', JSON.stringify(records));
-        render();
-    }
-
-    // Нова функція для відкриття/закриття налаштувань
-    function toggleSettings() {
-        const screen = document.getElementById('settings-screen');
-        if (screen.classList.contains('hidden')) {
-            screen.classList.remove('hidden');
-            screen.classList.add('flex');
-            document.body.style.overflow = 'hidden'; 
-        } else {
-            screen.classList.add('hidden');
-            screen.classList.remove('flex');
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    function togglePaymentScreen() {
-        const paymentScreen = document.getElementById('payment-screen');
-        if (paymentScreen.classList.contains('hidden')) {
-            paymentScreen.classList.remove('hidden');
-            paymentScreen.classList.add('flex', 'slide-up');
-            document.body.style.overflow = 'hidden'; 
-        } else {
-            paymentScreen.classList.add('hidden');
-            paymentScreen.classList.remove('flex', 'slide-up');
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    function savePayment() {
-        const amountInput = document.getElementById('payment-amount');
-        const value = amountInput.value.replace(',', '.');
-        const amount = parseFloat(value);
-        
-        if (isNaN(amount) || amount <= 0) {
-            alert('Будь ласка, введіть суму більшу за нуль.');
-            return;
+        function saveAndRender() {
+            localStorage.setItem('utility_records_v2', JSON.stringify(records));
+            render();
         }
 
-        if (records.length > 0) {
-            const latestRecord = records[records.length - 1];
-            latestRecord.paid = amount;
-            saveAndRender();
-            
-            amountInput.value = ''; 
-            togglePaymentScreen(); 
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            alert('Немає створених місяців.');
-        }
-    }
-
-    function resetData() {
-        if(confirm('Увага! Це видалить всі введені дані і поверне історію до Серпня 2024. Продовжити?')) {
-            records = JSON.parse(JSON.stringify(defaultRecords));
-            saveAndRender();
-        }
-    }
-
-    function exportData() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "komunalka_backup.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
-    }
-
-    function exportCSV() {
-        let currentBalance = startBalance;
-        const calculated = records.map((rec, index) => {
-            const prevRec = index > 0 ? records[index - 1] : null;
-            let cMI = 0, cVadik = 0;
-            if (prevRec && rec.meterMI > 0 && rec.meterVadik > 0) {
-                cMI = rec.meterMI - prevRec.meterMI;
-                cVadik = (rec.meterVadik - prevRec.meterVadik) - cMI;
+        function togglePaymentScreen() {
+            const paymentScreen = document.getElementById('payment-screen');
+            if (paymentScreen.classList.contains('hidden')) {
+                paymentScreen.classList.remove('hidden');
+                paymentScreen.classList.add('flex', 'slide-up');
+                document.body.style.overflow = 'hidden'; 
+            } else {
+                paymentScreen.classList.add('hidden');
+                paymentScreen.classList.remove('flex', 'slide-up');
+                document.body.style.overflow = 'auto';
             }
-            const lightCost = cVadik > 0 ? -(cVadik * rec.rate) : 0;
-            const prevBalance = index > 0 ? currentBalance : currentBalance;
-            currentBalance = prevBalance + rec.water + rec.gas + lightCost - rec.paid;
-            return { ...rec, cMI, cVadik, lightCost, prevBalance, monthBalance: currentBalance };
-        });
+        }
 
-        let csvContent = "\uFEFF"; 
-        csvContent += "Місяць;Лічильник Вадік;Лічильник МИ;Споживання Вадік;Споживання МИ;Вода (грн);Газ (грн);Оплачено (грн);Тариф Світло;Світло Вадік (грн);Залишок (грн)\n";
+        function savePayment() {
+            const amountInput = document.getElementById('payment-amount');
+            const value = amountInput.value.replace(',', '.');
+            const amount = parseFloat(value);
+            
+            if (isNaN(amount) || amount <= 0) {
+                alert('Будь ласка, введіть суму більшу за нуль.');
+                return;
+            }
 
-        calculated.forEach(rec => {
-            const row = [
-                `"${rec.name}"`,
-                rec.meterVadik,
-                rec.meterMI,
-                rec.cVadik,
-                rec.cMI,
-                rec.water,
-                rec.gas,
-                rec.paid,
-                rec.rate,
-                rec.lightCost.toFixed(2),
-                rec.monthBalance.toFixed(2)
-            ].map(val => String(val).replace('.', ',')).join(";"); 
-            csvContent += row + "\n";
-        });
+            if (records.length > 0) {
+                const latestRecord = records[records.length - 1];
+                latestRecord.paid = amount;
+                saveAndRender();
+                
+                amountInput.value = ''; 
+                togglePaymentScreen(); 
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                alert('Немає створених місяців.');
+            }
+        }
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement("a");
-        const url = URL.createObjectURL(blob);
-        link.setAttribute("href", url);
-        link.setAttribute("download", "komunalka_export.csv");
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+        function resetData() {
+            if(confirm('Увага! Це видалить всі введені дані і поверне історію до Серпня 2024. Продовжити?')) {
+                records = JSON.parse(JSON.stringify(defaultRecords));
+                saveAndRender();
+            }
+        }
 
-    function importData(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const imported = JSON.parse(e.target.result);
-                if (Array.isArray(imported) && imported.length > 0) {
-                    records = imported;
-                    saveAndRender();
-                    alert('Дані успішно відновлено!');
-                } else {
-                    alert('Неправильний формат файлу.');
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(records));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "komunalka_backup.json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+        }
+
+        // Нова функція експорту в CSV
+        function exportCSV() {
+            let currentBalance = startBalance;
+            const calculated = records.map((rec, index) => {
+                const prevRec = index > 0 ? records[index - 1] : null;
+                let cMI = 0, cVadik = 0;
+                if (prevRec && rec.meterMI > 0 && rec.meterVadik > 0) {
+                    cMI = rec.meterMI - prevRec.meterMI;
+                    cVadik = (rec.meterVadik - prevRec.meterVadik) - cMI;
                 }
-            } catch (err) {
-                alert('Помилка читання файлу. Перевірте формат.');
-            }
-        };
-        reader.readAsText(file);
-        event.target.value = '';
-    }
+                const lightCost = cVadik > 0 ? -(cVadik * rec.rate) : 0;
+                const prevBalance = index > 0 ? currentBalance : currentBalance;
+                currentBalance = prevBalance + rec.water + rec.gas + lightCost - rec.paid;
+                return { ...rec, cMI, cVadik, lightCost, prevBalance, monthBalance: currentBalance };
+            });
 
-    function toggleExpand(id) {
-        expandedId = expandedId === id ? null : id;
-        render();
-    }
+            // Додаємо BOM (\uFEFF) для коректного відображення української мови в Excel
+            let csvContent = "\uFEFF"; 
+            csvContent += "Місяць;Лічильник Вадік;Лічильник МИ;Споживання Вадік;Споживання МИ;Вода (грн);Газ (грн);Оплачено (грн);Тариф Світло;Світло Вадік (грн);Залишок (грн)\n";
 
-    function updateField(id, field, value) {
-        value = value.replace(',', '.');
-        const numVal = value === '' ? 0 : parseFloat(value);
-        const record = records.find(r => r.id === id);
-        if (record) {
-            record[field] = numVal;
-            saveAndRender();
+            calculated.forEach(rec => {
+                const row = [
+                    `"${rec.name}"`,
+                    rec.meterVadik,
+                    rec.meterMI,
+                    rec.cVadik,
+                    rec.cMI,
+                    rec.water,
+                    rec.gas,
+                    rec.paid,
+                    rec.rate,
+                    rec.lightCost.toFixed(2),
+                    rec.monthBalance.toFixed(2)
+                ].map(val => String(val).replace('.', ',')).join(";"); // Заміна крапки на кому для українського Excel
+                csvContent += row + "\n";
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", "komunalka_export.csv");
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
-    }
 
-    function deleteRecord(id) {
-        if(confirm('Видалити цей місяць?')) {
-            records = records.filter(r => r.id !== id);
-            saveAndRender();
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported) && imported.length > 0) {
+                        records = imported;
+                        saveAndRender();
+                        alert('Дані успішно відновлено!');
+                    } else {
+                        alert('Неправильний формат файлу.');
+                    }
+                } catch (err) {
+                    alert('Помилка читання файлу. Перевірте формат.');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
         }
-    }
 
-    function addMonth() {
-        const lastRecord = records[records.length - 1];
-        const now = new Date();
-        const newId = now.getTime().toString();
-        
-        records.push({
-            id: newId,
-            name: 'Новий місяць',
-            water: 0,
-            gas: 50.17,
-            paid: 0,
-            meterVadik: lastRecord ? lastRecord.meterVadik : 0,
-            meterMI: lastRecord ? lastRecord.meterMI : 0,
-            rate: 4.32
-        });
-        expandedId = newId; 
-        saveAndRender();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+        function toggleExpand(id) {
+            expandedId = expandedId === id ? null : id;
+            render();
+        }
 
-    function render() {
-        const container = document.getElementById('records-container');
-        container.innerHTML = '';
-        
-        let currentBalance = startBalance;
-        let currentTotal = 0;
-
-        const calculated = records.map((rec, index) => {
-            const prevRec = index > 0 ? records[index - 1] : null;
-            let cMI = 0, cVadik = 0;
-
-            if (prevRec && rec.meterMI > 0 && rec.meterVadik > 0) {
-                cMI = rec.meterMI - prevRec.meterMI;
-                cVadik = (rec.meterVadik - prevRec.meterVadik) - cMI;
+        function updateField(id, field, value) {
+            value = value.replace(',', '.');
+            const numVal = value === '' ? 0 : parseFloat(value);
+            const record = records.find(r => r.id === id);
+            if (record) {
+                record[field] = numVal;
+                saveAndRender();
             }
+        }
 
-            const lightCost = cVadik > 0 ? -(cVadik * rec.rate) : 0;
-            const prevBalance = index > 0 ? currentBalance : currentBalance;
+        function deleteRecord(id) {
+            if(confirm('Видалити цей місяць?')) {
+                records = records.filter(r => r.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function addMonth() {
+            const lastRecord = records[records.length - 1];
+            const now = new Date();
+            const newId = now.getTime().toString();
             
-            currentBalance = prevBalance + rec.water + rec.gas + lightCost - rec.paid;
-            currentTotal = currentBalance;
+            records.push({
+                id: newId,
+                name: 'Новий місяць',
+                water: 0,
+                gas: 50.17,
+                paid: 0,
+                meterVadik: lastRecord ? lastRecord.meterVadik : 0,
+                meterMI: lastRecord ? lastRecord.meterMI : 0,
+                rate: 4.32
+            });
+            expandedId = newId; 
+            saveAndRender();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-            return { ...rec, cMI, c
+        function render() {
+            const container = document.getElementById('records-container');
+            container.innerHTML = '';
+            
+            let currentBalance = startBalance;
+            let currentTotal = 0;
+
+            const calculated = records.map((rec, index) => {
+                const prevRec = index > 0 ? records[index - 1] : null;
+                let cMI = 0, cVadik = 0;
+
+                if (prevRec && rec.meterMI > 0 && rec.meterVadik > 0) {
+                    cMI = rec.meterMI - prevRec.meterMI;
+                    cVadik = (rec.meterVadik - prevRec.meterVadik) - cMI;
+                }
+
+                const lightCost = cVadik > 0 ? -(cVadik * rec.rate) : 0;
+                const prevBalance = index > 0 ? currentBalance : currentBalance;
+                
+                currentBalance = prevBalance + rec.water + rec.gas + lightCost - rec.paid;
+                currentTotal = currentBalance;
+
+                return { ...rec, cMI, cVadik, lightCost, prevBalance, monthBalance: currentBalance };
+            }).reverse(); 
+
+            document.getElementById('total-balance').innerText = currentTotal.toFixed(2) + ' ₴';
+
+            calculated.forEach(rec => {
+                const isExpanded = expandedId === rec.id;
+                const balColor = rec.monthBalance >= 0 ? 'text-green-600' : 'text-red-500';
+                
+                let detailsHtml = '';
+                if (isExpanded) {
+                    detailsHtml = `
+                        <div class="p-4 pt-0 border-t border-gray-50">
+                            <div class="mb-4">
+                                <label class="block text-xs text-gray-500 mb-1">Назва місяця</label>
+                                <input type="text" value="${rec.name}" onchange="records.find(r=>r.id=='${rec.id}').name=this.value; saveAndRender()" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 font-medium h-12">
+                            </div>
+
+                            <div class="bg-gray-50 p-3 rounded-xl mb-4 shadow-inner">
+                                <h3 class="text-sm font-semibold text-gray-500 mb-2 uppercase tracking-wide">Лічильники</h3>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">Вадік (Загальний)</label>
+                                        <input type="number" inputmode="decimal" value="${rec.meterVadik || ''}" onchange="updateField('${rec.id}', 'meterVadik', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-bold h-12 text-center text-blue-900 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <div class="text-xs text-gray-400 mt-1 text-center font-medium">Споживання: ${rec.cVadik}</div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-500 mb-1">МИ</label>
+                                        <input type="number" inputmode="decimal" value="${rec.meterMI || ''}" onchange="updateField('${rec.id}', 'meterMI', this.value)" class="w-full bg-white border border-gray-200 rounded-lg p-2 text-xl font-bold h-12 text-center text-blue-900 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                        <div class="text-xs text-gray-400 mt-1 text-center font-medium">Споживання: ${rec.cMI}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Вода (грн)</label>
+                                    <input type="number" inputmode="decimal" value="${rec.water || ''}" onchange="updateField('${rec.id}', 'water', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Газ (грн)</label>
+                                    <input type="number" inputmode="decimal" value="${rec.gas || ''}" onchange="updateField('${rec.id}', 'gas', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Оплачено (грн)</label>
+                                    <input type="number" inputmode="decimal" value="${rec.paid || ''}" onchange="updateField('${rec.id}', 'paid', this.value)" class="w-full bg-green-50 border border-green-300 rounded-lg p-2 text-lg text-green-700 font-bold h-12 shadow-sm focus:ring-2 focus:ring-green-500 outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-500 mb-1">Тариф Світло</label>
+                                    <input type="number" inputmode="decimal" step="0.01" value="${rec.rate || ''}" onchange="updateField('${rec.id}', 'rate', this.value)" class="w-full bg-gray-50 border border-gray-200 rounded-lg p-2 text-lg h-12 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                                </div>
+                            </div>
+
+                            <div class="bg-blue-50 text-blue-900 p-4 rounded-xl text-sm space-y-2 mb-4 border border-blue-100">
+                                <div class="flex justify-between items-center border-b border-blue-100 pb-2">
+                                    <span class="text-blue-700">Залишок з минулого:</span>
+                                    <span class="font-bold text-base">${rec.prevBalance.toFixed(2)} ₴</span>
+                                </div>
+                                <div class="flex justify-between items-center pt-1">
+                                    <span class="text-blue-700">Світло Вадік:</span>
+                                    <span class="text-red-600 font-bold text-base">${rec.lightCost.toFixed(2)} ₴</span>
+                                </div>
+                            </div>
+
+                            <button onclick="deleteRecord('${rec.id}')" class="w-full py-4 text-red-600 bg-red-50 hover:bg-red-100 rounded-xl transition-colors text-sm font-bold uppercase tracking-widest border border-red-100 shadow-sm active:scale-95">Видалити місяць</button>
+                        </div>
+                    `;
+                }
+
+                const cardHtml = `
+                    <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 transition-all">
+                        <div class="p-5 flex justify-between items-center cursor-pointer active:bg-gray-50" onclick="toggleExpand('${rec.id}')">
+                            <div>
+                                <h2 class="font-bold text-lg text-gray-800">${rec.name}</h2>
+                                <p class="text-sm font-bold mt-1 ${balColor}">Баланс: ${rec.monthBalance.toFixed(2)} ₴</p>
+                            </div>
+                            <div class="text-gray-500 text-2xl font-bold bg-gray-50 w-12 h-12 flex items-center justify-center rounded-full shadow-inner border border-gray-100">${isExpanded ? '−' : '+'}</div>
+                        </div>
+                        ${detailsHtml}
+                    </div>
+                `;
+                container.innerHTML += cardHtml;
+            });
+        }
+
+        render();
+    </script>
+</body>
+</html>
