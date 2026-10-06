@@ -25,31 +25,55 @@
             from { transform: translateY(100%); }
             to { transform: translateY(0); }
         }
+        
+        /* Плавное появление меню */
+        .fade-in {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
     </style>
 </head>
 <body class="pb-24 md:max-w-md md:mx-auto shadow-xl min-h-screen relative overflow-x-hidden">
 
     <!-- ГОЛОВНИЙ ЕКРАН -->
     <div id="main-screen">
-        <div class="absolute top-4 right-4 z-20 flex flex-col gap-2 items-end">
-            <button onclick="exportCSV()" class="text-white opacity-80 hover:opacity-100 text-xs bg-green-600 px-3 py-1.5 rounded shadow">
-                📊 В Excel (CSV)
-            </button>
-            <button onclick="exportData()" class="text-white opacity-80 hover:opacity-100 text-xs bg-blue-800 px-3 py-1.5 rounded shadow">
-                📤 Беккап (JSON)
-            </button>
-            <label class="text-white opacity-80 hover:opacity-100 text-xs bg-gray-700 px-3 py-1.5 rounded shadow cursor-pointer">
-                📥 Відновити
-                <input type="file" accept=".json" class="hidden" onchange="importData(event)">
-            </label>
-            <button onclick="resetData()" class="text-white opacity-80 hover:opacity-100 text-xs bg-red-800 px-3 py-1.5 rounded shadow mt-2">
-                🗑 Скинути
+        
+        <!-- Шапка з балансом та меню -->
+        <div class="bg-blue-600 text-white p-6 pt-14 rounded-b-3xl shadow-lg sticky top-0 z-10 flex justify-between items-start">
+            <div>
+                <h1 class="text-xl font-medium opacity-90 mb-1">Поточний залишок</h1>
+                <div class="text-4xl font-bold" id="total-balance">0.00 ₴</div>
+            </div>
+            
+            <!-- Кнопка налаштувань -->
+            <button onclick="toggleSettingsMenu()" class="p-2 bg-blue-700/50 hover:bg-blue-700 rounded-full transition-colors active:scale-95 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-7 h-7">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+                </svg>
             </button>
         </div>
 
-        <div class="bg-blue-600 text-white p-6 pt-12 rounded-b-3xl shadow-lg sticky top-0 z-10">
-            <h1 class="text-xl font-medium opacity-90 mb-1">Поточний залишок</h1>
-            <div class="text-4xl font-bold" id="total-balance">0.00 ₴</div>
+        <!-- Оверлей для закриття меню -->
+        <div id="menu-overlay" onclick="toggleSettingsMenu()" class="hidden fixed inset-0 z-20"></div>
+
+        <!-- Випадаюче меню налаштувань -->
+        <div id="settings-menu" class="hidden fixed top-24 right-5 bg-white rounded-2xl shadow-2xl z-30 border border-gray-100 overflow-hidden w-56 flex-col">
+            <button onclick="exportCSV(); toggleSettingsMenu()" class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 font-medium active:bg-gray-100">
+                <span class="text-xl">📊</span> В Excel (CSV)
+            </button>
+            <button onclick="exportData(); toggleSettingsMenu()" class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 font-medium active:bg-gray-100">
+                <span class="text-xl">📤</span> Беккап (JSON)
+            </button>
+            <label class="w-full text-left px-5 py-4 text-gray-700 hover:bg-gray-50 flex items-center gap-3 border-b border-gray-100 font-medium cursor-pointer mb-0 active:bg-gray-100">
+                <span class="text-xl">📥</span> Відновити
+                <input type="file" accept=".json" class="hidden" onchange="importData(event); toggleSettingsMenu()">
+            </label>
+            <button onclick="resetData(); toggleSettingsMenu()" class="w-full text-left px-5 py-4 text-red-600 hover:bg-red-50 flex items-center gap-3 font-medium active:bg-red-100">
+                <span class="text-xl">🗑</span> Скинути дані
+            </button>
         </div>
 
         <div id="records-container" class="p-4 space-y-4"></div>
@@ -57,7 +81,7 @@
 
     <!-- ЕКРАН ОПЛАТИ -->
     <div id="payment-screen" class="hidden fixed inset-0 bg-gray-100 z-50 flex-col md:max-w-md md:mx-auto shadow-xl">
-        <div class="bg-blue-800 text-white p-4 pt-12 flex items-center shadow-md">
+        <div class="bg-blue-800 text-white p-4 pt-14 flex items-center shadow-md">
             <button onclick="togglePaymentScreen()" class="mr-4 text-3xl font-bold px-2 py-1 bg-blue-700 rounded-lg active:bg-blue-900 transition-colors">
                 ←
             </button>
@@ -65,7 +89,6 @@
         </div>
         
         <div class="p-6 flex flex-col gap-4 flex-1 overflow-y-auto pb-24">
-            
             <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
                 <p class="text-gray-500 text-center mb-4 text-sm font-bold uppercase tracking-wide">Крок 1. Перейдіть у банк</p>
                 
@@ -124,6 +147,20 @@
             render();
         }
 
+        function toggleSettingsMenu() {
+            const menu = document.getElementById('settings-menu');
+            const overlay = document.getElementById('menu-overlay');
+            if (menu.classList.contains('hidden')) {
+                menu.classList.remove('hidden');
+                menu.classList.add('flex', 'fade-in');
+                overlay.classList.remove('hidden');
+            } else {
+                menu.classList.add('hidden');
+                menu.classList.remove('flex', 'fade-in');
+                overlay.classList.add('hidden');
+            }
+        }
+
         function togglePaymentScreen() {
             const paymentScreen = document.getElementById('payment-screen');
             if (paymentScreen.classList.contains('hidden')) {
@@ -177,7 +214,6 @@
             downloadAnchorNode.remove();
         }
 
-        // Нова функція експорту в CSV
         function exportCSV() {
             let currentBalance = startBalance;
             const calculated = records.map((rec, index) => {
@@ -193,7 +229,6 @@
                 return { ...rec, cMI, cVadik, lightCost, prevBalance, monthBalance: currentBalance };
             });
 
-            // Додаємо BOM (\uFEFF) для коректного відображення української мови в Excel
             let csvContent = "\uFEFF"; 
             csvContent += "Місяць;Лічильник Вадік;Лічильник МИ;Споживання Вадік;Споживання МИ;Вода (грн);Газ (грн);Оплачено (грн);Тариф Світло;Світло Вадік (грн);Залишок (грн)\n";
 
@@ -210,7 +245,7 @@
                     rec.rate,
                     rec.lightCost.toFixed(2),
                     rec.monthBalance.toFixed(2)
-                ].map(val => String(val).replace('.', ',')).join(";"); // Заміна крапки на кому для українського Excel
+                ].map(val => String(val).replace('.', ',')).join(";"); 
                 csvContent += row + "\n";
             });
 
